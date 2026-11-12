@@ -9,7 +9,7 @@ const API_KEY = process.env.GEMINI_API_KEY;
 
 app.use(express.json({ limit: "12mb" }));
 
-// Serve the homepage and files from the main repository folder
+// Serve website files from the main repository folder
 app.use(express.static(__dirname));
 
 app.get("/api/status", (_req, res) => {
@@ -54,7 +54,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
       {
         method: "POST",
         headers: {
