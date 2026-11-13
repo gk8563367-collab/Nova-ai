@@ -9,7 +9,7 @@ const API_KEY = process.env.GROQ_API_KEY;
 
 app.use(express.json({ limit: "12mb" }));
 
-// Serve only the website files from the main folder
+// WANDER AI website
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -22,10 +22,12 @@ app.get("/app.js", (_req, res) => {
   res.sendFile(path.join(__dirname, "app.js"));
 });
 
+// API status
 app.get("/api/status", (_req, res) => {
   res.json({ configured: Boolean(API_KEY) });
 });
 
+// AI Chat
 app.post("/api/chat", async (req, res) => {
   try {
     if (!API_KEY) {
@@ -57,9 +59,10 @@ app.post("/api/chat", async (req, res) => {
       }
 
       groqMessages.push({
-        role: message.role === "model" || message.role === "assistant"
-          ? "assistant"
-          : "user",
+        role:
+          message.role === "model" || message.role === "assistant"
+            ? "assistant"
+            : "user",
         content: message.text.slice(0, 12000)
       });
     }
@@ -79,7 +82,7 @@ app.post("/api/chat", async (req, res) => {
           "Authorization": `Bearer ${API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "openai/gpt-oss-20b",
           messages: groqMessages,
           max_completion_tokens: 1024
         })
@@ -114,5 +117,5 @@ app.post("/api/chat", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`NOVA AI is running on port ${PORT}`);
+  console.log(`WANDER AI is running on port ${PORT}`);
 });
