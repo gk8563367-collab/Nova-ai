@@ -5,12 +5,22 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.GROQ_API_KEY;
 
 app.use(express.json({ limit: "12mb" }));
 
-// Serve website files from the main repository folder
-app.use(express.static(__dirname));
+// Serve only the website files from the main folder
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.get("/style.css", (_req, res) => {
+  res.sendFile(path.join(__dirname, "style.css"));
+});
+
+app.get("/app.js", (_req, res) => {
+  res.sendFile(path.join(__dirname, "app.js"));
+});
 
 app.get("/api/status", (_req, res) => {
   res.json({ configured: Boolean(API_KEY) });
@@ -20,66 +30,77 @@ app.post("/api/chat", async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(503).json({
-        error: "The API key is not configured."
+        error: "Groq API key is not configured."
       });
     }
 
     const { messages, systemInstruction } = req.body || {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: "Please send a message." });
+      return res.status(400).json({
+        error: "Please send a message."
+      });
     }
 
-    const contents = messages.slice(-20).map((message) => {
-      const role = message.role === "model" ? "model" : "user";
-      const parts = [];
-
-      if (typeof message.text === "string" && message.text.trim()) {
-        parts.push({ text: message.text.slice(0, 12000) });
-      }
-
-      return { role, parts };
-    }).filter(item => item.parts.length);
-
-    if (!contents.length) {
-      return res.status(400).json({ error: "Please send text." });
-    }
-
-    const body = { contents };
+    const groqMessages = [];
 
     if (typeof systemInstruction === "string" && systemInstruction.trim()) {
-      body.system_instruction = {
-        parts: [{ text: systemInstruction.slice(0, 3000) }]
-      };
+      groqMessages.push({
+        role: "system",
+        content: systemInstruction.slice(0, 3000)
+      });
+    }
+
+    for (const message of messages.slice(-20)) {
+      if (typeof message.text !== "string" || !message.text.trim()) {
+        continue;
+      }
+
+      groqMessages.push({
+        role: message.role === "model" || message.role === "assistant"
+          ? "assistant"
+          : "user",
+        content: message.text.slice(0, 12000)
+      });
+    }
+
+    if (!groqMessages.length) {
+      return res.status(400).json({
+        error: "Please send a text message."
+      });
     }
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": API_KEY
+          "Authorization": `Bearer ${API_KEY}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: groqMessages,
+          max_completion_tokens: 1024
+        })
       }
     );
 
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      console.error("Groq API error:", data);
       return res.status(response.status).json({
-        error: data?.error?.message || "Gemini API error"
+        error: data?.error?.message || "Groq API request failed."
       });
     }
 
-    const answer = (data.candidates?.[0]?.content?.parts || [])
-      .map(part => part.text || "")
-      .join("")
-      .trim();
+    const answer = data.choices?.[0]?.message?.content?.trim();
 
     if (!answer) {
-      return res.status(502).json({ error: "Empty AI response." });
+      return res.status(502).json({
+        error: "The AI returned an empty response."
+      });
     }
 
     res.json({ answer });
