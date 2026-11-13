@@ -109,3 +109,6 @@ app.post("/api/chat", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`WANDER AI is running on port ${PORT}`);
 });
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
