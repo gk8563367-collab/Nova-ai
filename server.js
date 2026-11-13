@@ -14,10 +14,12 @@ app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// Load CSS from the public folder
 app.get("/style.css", (_req, res) => {
-  res.sendFile(path.join(__dirname, "style.css"));
+  res.sendFile(path.join(__dirname, "public", "style.css"));
 });
 
+// Load JavaScript from the root folder
 app.get("/app.js", (_req, res) => {
   res.sendFile(path.join(__dirname, "app.js"));
 });
@@ -54,7 +56,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     for (const message of messages.slice(-20)) {
-      if (typeof message.text !== "string" || !message.text.trim()) {
+      if (!message || typeof message.text !== "string" || !message.text.trim()) {
         continue;
       }
 
