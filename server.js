@@ -9,20 +9,8 @@ const API_KEY = process.env.GROQ_API_KEY;
 
 app.use(express.json({ limit: "12mb" }));
 
-// WANDER AI website
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Load CSS from the public folder
-app.get("/style.css", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "style.css"));
-});
-
-// Load JavaScript from the root folder
-app.get("/app.js", (_req, res) => {
-  res.sendFile(path.join(__dirname, "app.js"));
-});
+// Serve all website files from public
+app.use(express.static(path.join(__dirname, "public")));
 
 // API status
 app.get("/api/status", (_req, res) => {
