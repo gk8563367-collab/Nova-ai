@@ -9,8 +9,13 @@ const API_KEY = process.env.GROQ_API_KEY;
 
 app.use(express.json({ limit: "12mb" }));
 
-// Serve all website files from public
+// Serve website files from public folder
 app.use(express.static(path.join(__dirname, "public")));
+
+// Homepage
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 // API status
 app.get("/api/status", (_req, res) => {
@@ -29,9 +34,7 @@ app.post("/api/chat", async (req, res) => {
     const { messages, systemInstruction } = req.body || {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({
-        error: "Please send a message."
-      });
+      return res.status(400).json({ error: "Please send a message." });
     }
 
     const groqMessages = [];
@@ -44,23 +47,18 @@ app.post("/api/chat", async (req, res) => {
     }
 
     for (const message of messages.slice(-20)) {
-      if (!message || typeof message.text !== "string" || !message.text.trim()) {
-        continue;
-      }
+      if (!message || typeof message.text !== "string" || !message.text.trim()) continue;
 
       groqMessages.push({
-        role:
-          message.role === "model" || message.role === "assistant"
-            ? "assistant"
-            : "user",
+        role: message.role === "model" || message.role === "assistant"
+          ? "assistant"
+          : "user",
         content: message.text.slice(0, 12000)
       });
     }
 
     if (!groqMessages.length) {
-      return res.status(400).json({
-        error: "Please send a text message."
-      });
+      return res.status(400).json({ error: "Please send a text message." });
     }
 
     const response = await fetch(
@@ -97,18 +95,13 @@ app.post("/api/chat", async (req, res) => {
     }
 
     res.json({ answer });
-
   } catch (error) {
     console.error("Chat error:", error);
-    res.status(500).json({
-      error: "Server error. Please try again."
-    });
+    res.status(500).json({ error: "Server error. Please try again." });
   }
 });
 
 app.listen(PORT, () => {
   console.log(`WANDER AI is running on port ${PORT}`);
 });
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+      
