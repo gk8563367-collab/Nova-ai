@@ -20,19 +20,19 @@ form.addEventListener("submit", async (event) => {
   if (!prompt) return;
 
   addMessage(prompt, "user");
-  history.push({ role: "user", parts: [{ text: prompt }] });
+  history.push({ role: "user", text: prompt });
   input.value = "";
 
   const loading = document.createElement("div");
   loading.className = "message bot";
-  loading.textContent = "NOVA AI is thinking...";
+  loading.textContent = "WANDER AI is thinking...";
   chat.appendChild(loading);
 
   try {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt })
+      body: JSON.stringify({ messages: history })
     });
 
     const data = await response.json();
@@ -42,9 +42,9 @@ form.addEventListener("submit", async (event) => {
       throw new Error(data.error || "Request failed");
     }
 
-    const reply = data.reply || data.response || "No reply received.";
+    const reply = data.answer || "No reply received.";
     addMessage(reply, "bot");
-    history.push({ role: "assistant", parts: [{ text: reply }] });
+    history.push({ role: "assistant", text: reply });
 
   } catch (error) {
     loading.remove();
